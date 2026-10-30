@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: #f4f6f9;
+      font-family: Arial, Tahoma, sans-serif;
+      color: #222;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 650px;
+      padding: 40px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 20px;
+      text-align: center;
+      color: #0755b5;
+      font-size: 38px;
+    }
+
+    .subtitle {
+      margin-bottom: 35px;
+      text-align: center;
+      color: #666;
+      font-size: 18px;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 19px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px;
+      border: 1px solid #d0d7e2;
+      border-radius: 9px;
+      background: #f4f7fb;
+      font-size: 17px;
+      outline: none;
+      direction: ltr;
+      text-align: left;
+    }
+
+    input:focus {
+      border-color: #0755b5;
+      box-shadow: 0 0 0 3px rgba(7, 85, 181, 0.12);
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 9px;
+      background: #0755b5;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #064494;
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
+    #message {
+      display: none;
+      margin-top: 18px;
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    #message.error {
+      display: block;
+      color: #b42318;
+    }
+
+    #message.success {
+      display: block;
+      color: #16803c;
+    }
+
+    .signup-link {
+      margin-top: 25px;
+      text-align: center;
+      font-size: 17px;
+    }
+
+    .signup-link a {
+      color: #0755b5;
+      font-weight: bold;
+    }
+
+    @media (max-width: 500px) {
+      .login-container {
+        padding: 25px 20px;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="login-container">
+    <h1>تسجيل الدخول</h1>
+
+    <p class="subtitle">أهلاً بيك! سجل دخولك للمتابعة.</p>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">البريد الإلكتروني</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="أدخل البريد الإلكتروني"
+          autocomplete="email"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="password">كلمة المرور</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="أدخل كلمة المرور"
+          autocomplete="current-password"
+          required
+        >
+      </div>
+
+      <button type="submit" id="loginButton">
+        تسجيل الدخول
+      </button>
+
+      <p id="message" role="alert" aria-live="polite"></p>
+    </form>
+
+    <div class="signup-link">
+      معندكش حساب؟
+      <a href="/index.html">إنشاء حساب جديد</a>
+    </div>
+  </main>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const loginButton = document.getElementById('loginButton');
+    const message = document.getElementById('message');
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = type;
+    }
+
+    loginForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        showMessage(
+          'من فضلك أدخل البريد الإلكتروني وكلمة المرور.',
+          'error'
+        );
+        return;
+      }
+
+      loginButton.disabled = true;
+      loginButton.textContent = 'جارٍ تسجيل الدخول...';
+      showMessage('جارٍ التحقق من البيانات...', 'success');
+
+      try {
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password
+          })
+        });
+
+        let result;
+
+        try {
+          result = await response.json();
+        } catch {
+          throw new Error(
+            'السيرفر لم يُرجع استجابة صحيحة. راجعي index.js.'
+          );
+        }
+
+        if (!response.ok || !result.success) {
+          showMessage(
+            result.message ||
+            'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+            'error'
+          );
+          return;
+        }
+
+        const user = result.user;
+
+        if (!user || !(user.user_id || user.id)) {
+          showMessage(
+            'تم الدخول، لكن السيرفر لم يُرجع رقم المستخدم.',
+            'error'
+          );
+          return;
+        }
+
+        sessionStorage.setItem(
+          'loggedInUser',
+          JSON.stringify({
+            id: user.user_id || user.id,
+            name: user.name,
+            email: user.email,
+            user_type: user.user_type
+          })
+        );
+
+        showMessage(
+          'تم تسجيل الدخول بنجاح. جارٍ فتح لوحة التحكم...',
+          'success'
+        );
+
+        window.location.assign('/dashboard.html');
+
+      } catch (error) {
+        console.error('Login error:', error);
+
+        showMessage(
+          error.message ||
+          'تعذر الاتصال بالسيرفر. تأكدي من تشغيل node index.js.',
+          'error'
+        );
+      } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = 'تسجيل الدخول';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إنشاء حساب جديد</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 30px 15px;
+      color: #222;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 3px 15px #0001;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin: 15px 0 7px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      background: #1769d2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 13px 22px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+      line-height: 1.7;
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    a {
+      color: #1769d2;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: right;
+    }
+
+    th {
+      background: #1769d2;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<main class="container">
+
+  <h1>إنشاء حساب جديد</h1>
+
+  <form id="signupForm">
+
+    <!-- First Name -->
+    <label for="firstName">الاسم الأول</label>
+    <input
+      type="text"
+      id="firstName"
+      maxlength="15"
+      required
+      autocomplete="given-name"
+    >
+
+    <!-- Last Name -->
+    <label for="lastName">الاسم الثاني</label>
+    <input
+      type="text"
+      id="lastName"
+      maxlength="15"
+      required
+      autocomplete="family-name"
+    >
+
+    <!-- Email -->
+    <label for="email">البريد الإلكتروني</label>
+    <input
+      type="email"
+      id="email"
+      maxlength="254"
+      required
+      autocomplete="email"
+    >
+
+    <!-- Password -->
+    <label for="password">كلمة المرور</label>
+    <input
+      type="password"
+      id="password"
+      minlength="8"
+      required
+      autocomplete="new-password"
+    >
+
+    <small>
+      يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل وحرف ورقم.
+    </small>
+
+    <!-- Phone -->
+    <label for="phone">رقم التليفون</label>
+    <input
+      type="tel"
+      id="phone"
+      maxlength="11"
+      inputmode="numeric"
+      pattern="01[0125][0-9]{8}"
+      required
+      autocomplete="tel"
+    >
+
+    <!-- User Type -->
+    <label for="user_type">نوع المستخدم</label>
+    <select id="user_type" required>
+
+      <option value="" disabled selected>
+        اختر نوع المستخدم
+      </option>
+
+      <option value="student">Student</option>
+      <option value="company">Company</option>
+
+    </select>
+
+    <button type="submit" id="submitButton">
+      حفظ البيانات
+    </button>
+
+    <p id="message" role="alert" aria-live="polite"></p>
+
+    <p class="login-link">
+      عندك حساب بالفعل؟
+      <a href="/login.html">تسجيل الدخول</a>
+    </p>
+
+  </form>
+
+  <!-- Registered Users -->
+  <section>
+
+    <h2>البيانات المسجلة</h2>
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>رقم المستخدم</th>
+            <th>الاسم</th>
+            <th>البريد الإلكتروني</th>
+            <th>رقم التليفون</th>
+            <th>نوع المستخدم</th>
+          </tr>
+        </thead>
+
+        <tbody id="usersTableBody"></tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</main>
+
+<script>
+
+const form = document.getElementById('signupForm');
+const message = document.getElementById('message');
+const submitButton = document.getElementById('submitButton');
+const usersTableBody = document.getElementById('usersTableBody');
+
+
+// ==================== Signup ====================
+
+form.addEventListener('submit', async function(event) {
+
+  event.preventDefault();
+
+  if (!form.reportValidity()) return;
+
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+
+  const email = document.getElementById('email').value.trim().toLowerCase();
+
+  const password = document.getElementById('password').value;
+
+  const phone = document.getElementById('phone').value.trim();
+
+  const user_type = document.getElementById('user_type').value;
+
+
+  // ==================== Name Validation ====================
+
+  const namePattern = /^[\p{L}]+$/u;
+
+  if (!firstName || !lastName) {
+    message.style.color = 'red';
+    message.textContent = 'من فضلك أدخل الاسم الأول والاسم الثاني.';
+    return;
+  }
+
+  if (!namePattern.test(firstName) || !namePattern.test(lastName)) {
+    message.style.color = 'red';
+    message.textContent = 'الاسم يجب أن يحتوي على حروف فقط بدون أرقام أو رموز.';
+    return;
+  }
+
+  if (firstName.length > 15 || lastName.length > 15) {
+    message.style.color = 'red';
+    message.textContent = 'كل خانة اسم يجب ألا تزيد عن 15 حرفًا.';
+    return;
+  }
+
+
+  // ==================== Email Validation ====================
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(email)) {
+    message.style.color = 'red';
+    message.textContent = 'من فضلك أدخل بريدًا إلكترونيًا صحيحًا.';
+    return;
+  }
+
+
+  // ==================== Password Validation ====================
+
+  const passwordPattern = /^(?=.*[A-Za-z])(?=.*[0-9]).{8,}$/;
+
+  if (!passwordPattern.test(password)) {
+    message.style.color = 'red';
+    message.textContent =
+      'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل وحرف ورقم.';
+    return;
+  }
+
+
+  // ==================== Phone Validation ====================
+
+  const phonePattern = /^01[0125][0-9]{8}$/;
+
+  if (!phonePattern.test(phone)) {
+    message.style.color = 'red';
+    message.textContent =
+      'رقم الهاتف يجب أن يكون رقم موبايل مصري صحيح مكون من 11 رقمًا.';
+    return;
+  }
+
+
+  // ==================== User Type Validation ====================
+
+  if (!user_type) {
+    message.style.color = 'red';
+    message.textContent = 'من فضلك اختر نوع المستخدم.';
+    return;
+  }
+
+
+  // ==================== Prepare User Data ====================
+
+  const userData = {
+    name: firstName + ' ' + lastName,
+    email: email,
+    password: password,
+    phone: phone,
+    user_type: user_type
+  };
+
+
+  submitButton.disabled = true;
+  submitButton.textContent = 'جارٍ الحفظ...';
+
+  message.textContent = '';
+
+
+  // ==================== Send Data To Backend ====================
+
+  try {
+
+    const response = await fetch('/user', {
+      method: 'POST',
+
+      headers: {
+        'Content-Type': 'application/json'
+      },
+
+      body: JSON.stringify(userData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'فشل إنشاء الحساب');
+    }
+
+    message.style.color = 'green';
+
+    message.textContent =
+      'تم إنشاء الحساب بنجاح. جارٍ الانتقال لتسجيل الدخول...';
+
+    form.reset();
+
+    await loadUsers();
+
+    setTimeout(() => {
+      window.location.href = '/login.html';
+    }, 1500);
+
+
+  } catch (error) {
+
+    message.style.color = 'red';
+    message.textContent = error.message;
+
+  } finally {
+
+    submitButton.disabled = false;
+    submitButton.textContent = 'حفظ البيانات';
+
+  }
+
+});
+
+
+// ==================== Load Users ====================
+
+async function loadUsers() {
+
+  try {
+
+    const response = await fetch('/user');
+
+    if (!response.ok) {
+      throw new Error('فشل تحميل البيانات');
+    }
+
+    const users = await response.json();
+
+    usersTableBody.replaceChildren();
+
+
+    if (!users.length) {
+
+      const row = document.createElement('tr');
+
+      const cell = document.createElement('td');
+
+      cell.colSpan = 5;
+
+      cell.textContent = 'لا توجد بيانات مسجلة';
+
+      row.appendChild(cell);
+
+      usersTableBody.appendChild(row);
+
+      return;
+
+    }
+
+
+    users.forEach(user => {
+
+      const row = document.createElement('tr');
+
+      [
+        user.user_id,
+        user.NAME,
+        user.email,
+        user.phone,
+        user.user_type
+
+      ].forEach(value => {
+
+        const cell = document.createElement('td');
+
+        cell.textContent = value ?? '';
+
+        row.appendChild(cell);
+
+      });
+
+      usersTableBody.appendChild(row);
+
+    });
+
+
+  } catch (error) {
+
+    usersTableBody.textContent = 'تعذر تحميل البيانات';
+
+  }
+
+}
+
+
+// Load users when page opens
+loadUsers();
+
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إنشاء حساب جديد</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 30px 15px;
+      color: #222;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 3px 15px #0001;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin: 15px 0 7px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      background: #1769d2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 13px 22px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+      line-height: 1.7;
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    a {
+      color: #1769d2;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: right;
+    }
+
+    th {
+      background: #1769d2;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<main class="container">
+
+  <h1>إنشاء حساب جديد</h1>
+
+  <form id="signupForm">
+
+    <!-- First Name -->
+    <label for="firstName">الاسم الأول</label>
+    <input
+      type="text"
+      id="firstName"
+      maxlength="15"
+      required
+      autocomplete="given-name"
+    >
+
+    <!-- Last Name -->
+    <label for="lastName">الاسم الثاني</label>
+    <input
+      type="text"
+      id="lastName"
+      maxlength="15"
+      required
+      autocomplete="family-name"
+    >
+
+    <!-- Email -->
+    <label for="email">البريد الإلكتروني</label>
+    <input
+      type="email"
+      id="email"
+      maxlength="254"
+      required
+      autocomplete="email"
+    >
+
+    <!-- Password -->
+    <label for="password">كلمة المرور</label>
+    <input
+      type="password"
+      id="password"
+      minlength="8"
+      required
+      autocomplete="new-password"
+    >
+
+    <small>
+      يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل وحرف ورقم.
+    </small>
+
+    <!-- Phone -->
+    <label for="phone">رقم التليفون</label>
+    <input
+      type="tel"
+      id="phone"
+      maxlength="11"
+      inputmode="numeric"
+      pattern="01[0125][0-9]{8}"
+      required
+      autocomplete="tel"
+    >
+
+    <!-- User Type -->
+    <label for="user_type">نوع المستخدم</label>
+    <select id="user_type" required>
+
+      <option value="" disabled selected>
+        اختر نوع المستخدم
+      </option>
+
+      <option value="student">Student</option>
+      <option value="company">Company</option>
+
+    </select>
+
+    <button type="submit" id="submitButton">
+      حفظ البيانات
+    </button>
+
+    <p id="message" role="alert" aria-live="polite"></p>
+
+    <p class="login-link">
+      عندك حساب بالفعل؟
+      <a href="/login.html">تسجيل الدخول</a>
+    </p>
+
+  </form>
+
+  <!-- Registered Users -->
+  <section>
+
+    <h2>البيانات المسجلة</h2>
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>رقم المستخدم</th>
+            <th>الاسم</th>
+            <th>البريد الإلكتروني</th>
+            <th>رقم التليفون</th>
+            <th>نوع المستخدم</th>
+          </tr>
+        </thead>
+
+        <tbody id="usersTableBody"></tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</main>
+
+<script>
+
+const form = document.getElementById('signupForm');
+const message = document.getElementById('message');
+const submitButton = document.getElementById('submitButton');
+const usersTableBody = document.getElementById('usersTableBody');
+
+
+// ==================== Signup ====================
+
+form.addEventListener('submit', async function(event) {
+
+  event.preventDefault();
+
+  if (!form.reportValidity()) return;
+
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+
+  const email = document.getElementById('email').value.trim().toLowerCase();
+
+  const password = document.getElementById('password').value;
+
+  const phone = document.getElementById('phone').value.trim();
+
+  const user_type = document.getElementById('user_type').value;
+
+
+  // ==================== Name Validation ====================
+
+  const namePattern = /^[\p{L}]+$/u;
+
+  if (!firstName || !lastName) {
+    message.style.color = 'red';
+    message.textContent = 'من فضلك أدخل الاسم الأول والاسم الثاني.';
+    return;
+  }
+
+  if (!namePattern.test(firstName) || !namePattern.test(lastName)) {
+    message.style.color = 'red';
+    message.textContent = 'الاسم يجب أن يحتوي على حروف فقط بدون أرقام أو رموز.';
+    return;
+  }
+
+  if (firstName.length > 15 || lastName.length > 15) {
+    message.style.color = 'red';
+    message.textContent = 'كل خانة اسم يجب ألا تزيد عن 15 حرفًا.';
+    return;
+  }
+
+
+  // ==================== Email Validation ====================
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(email)) {
+    message.style.color = 'red';
+    message.textContent = 'من فضلك أدخل بريدًا إلكترونيًا صحيحًا.';
+    return;
+  }
+
+
+  // ==================== Password Validation ====================
+
+  const passwordPattern = /^(?=.*[A-Za-z])(?=.*[0-9]).{8,}$/;
+
+  if (!passwordPattern.test(password)) {
+    message.style.color = 'red';
+    message.textContent =
+      'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل وحرف ورقم.';
+    return;
+  }
+
+
+  // ==================== Phone Validation ====================
+
+  const phonePattern = /^01[0125][0-9]{8}$/;
+
+  if (!phonePattern.test(phone)) {
+    message.style.color = 'red';
+    message.textContent =
+      'رقم الهاتف يجب أن يكون رقم موبايل مصري صحيح مكون من 11 رقمًا.';
+    return;
+  }
+
+
+  // ==================== User Type Validation ====================
+
+  if (!user_type) {
+    message.style.color = 'red';
+    message.textContent = 'من فضلك اختر نوع المستخدم.';
+    return;
+  }
+
+
+  // ==================== Prepare User Data ====================
+
+  const userData = {
+    name: firstName + ' ' + lastName,
+    email: email,
+    password: password,
+    phone: phone,
+    user_type: user_type
+  };
+
+
+  submitButton.disabled = true;
+  submitButton.textContent = 'جارٍ الحفظ...';
+
+  message.textContent = '';
+
+
+  // ==================== Send Data To Backend ====================
+
+  try {
+
+    const response = await fetch('/user', {
+      method: 'POST',
+
+      headers: {
+        'Content-Type': 'application/json'
+      },
+
+      body: JSON.stringify(userData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'فشل إنشاء الحساب');
+    }
+
+    message.style.color = 'green';
+
+    message.textContent =
+      'تم إنشاء الحساب بنجاح. جارٍ الانتقال لتسجيل الدخول...';
+
+    form.reset();
+
+    await loadUsers();
+
+    setTimeout(() => {
+      window.location.href = '/login.html';
+    }, 1500);
+
+
+  } catch (error) {
+
+    message.style.color = 'red';
+    message.textContent = error.message;
+
+  } finally {
+
+    submitButton.disabled = false;
+    submitButton.textContent = 'حفظ البيانات';
+
+  }
+
+});
+
+
+// ==================== Load Users ====================
+
+async function loadUsers() {
+
+  try {
+
+    const response = await fetch('/user');
+
+    if (!response.ok) {
+      throw new Error('فشل تحميل البيانات');
+    }
+
+    const users = await response.json();
+
+    usersTableBody.replaceChildren();
+
+
+    if (!users.length) {
+
+      const row = document.createElement('tr');
+
+      const cell = document.createElement('td');
+
+      cell.colSpan = 5;
+
+      cell.textContent = 'لا توجد بيانات مسجلة';
+
+      row.appendChild(cell);
+
+      usersTableBody.appendChild(row);
+
+      return;
+
+    }
+
+
+    users.forEach(user => {
+
+      const row = document.createElement('tr');
+
+      [
+        user.user_id,
+        user.NAME,
+        user.email,
+        user.phone,
+        user.user_type
+
+      ].forEach(value => {
+
+        const cell = document.createElement('td');
+
+        cell.textContent = value ?? '';
+
+        row.appendChild(cell);
+
+      });
+
+      usersTableBody.appendChild(row);
+
+    });
+
+
+  } catch (error) {
+
+    usersTableBody.textContent = 'تعذر تحميل البيانات';
+
+  }
+
+}
+
+
+// Load users when page opens
+loadUsers();
+
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إنشاء حساب جديد</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 30px 15px;
+      color: #222;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 3px 15px #0001;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin: 15px 0 7px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      background: #1769d2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 13px 22px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+      line-height: 1.7;
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    a {
+      color: #1769d2;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: right;
+    }
+
+    th {
+      background: #1769d2;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<main class="container">
+
+  <h1>إنشاء حساب جديد</h1>
+
+  <form id="signupForm">
+
+    <!-- First Name -->
+    <label for="firstName">الاسم الأول</label>
+    <input
+      type="text"
+      id="firstName"
+      maxlength="15"
+      required
+      autocomplete="given-name"
+    >
+
+    <!-- Last Name -->
+    <label for="lastName">الاسم الثاني</label>
+    <input
+      type="text"
+      id="lastName"
+      maxlength="15"
+      required
+      autocomplete="family-name"
+    >
+
+    <!-- Email -->
+    <label for="email">البريد الإلكتروني</label>
+    <input
+      type="email"
+      id="email"
+      maxlength="254"
+      required
+      autocomplete="email"
+    >
+
+    <!-- Password -->
+    <label for="password">كلمة المرور</label>
+    <input
+      type="password"
+      id="password"
+      minlength="8"
+      required
+      autocomplete="new-password"
+    >
+
+    <small>
+      يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل وحرف ورقم.
+    </small>
+
+    <!-- Phone -->
+    <label for="phone">رقم التليفون</label>
+    <input
+      type="tel"
+      id="phone"
+      maxlength="11"
+      inputmode="numeric"
+      pattern="01[0125][0-9]{8}"
+      required
+      autocomplete="tel"
+    >
+
+    <!-- User Type -->
+    <label for="user_type">نوع المستخدم</label>
+    <select id="user_type" required>
+
+      <option value="" disabled selected>
+        اختر نوع المستخدم
+      </option>
+
+      <option value="student">Student</option>
+      <option value="company">Company</option>
+
+    </select>
+
+    <button type="submit" id="submitButton">
+      حفظ البيانات
+    </button>
+
+    <p id="message" role="alert" aria-live="polite"></p>
+
+    <p class="login-link">
+      عندك حساب بالفعل؟
+      <a href="/login.html">تسجيل الدخول</a>
+    </p>
+
+  </form>
+
+  <!-- Registered Users -->
+  <section>
+
+    <h2>البيانات المسجلة</h2>
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>رقم المستخدم</th>
+            <th>الاسم</th>
+            <th>البريد الإلكتروني</th>
+            <th>رقم التليفون</th>
+            <th>نوع المستخدم</th>
+          </tr>
+        </thead>
+
+        <tbody id="usersTableBody"></tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</main>
+
+<script>
+
+const form = document.getElementById('signupForm');
+const message = document.getElementById('message');
+const submitButton = document.getElementById('submitButton');
+const usersTableBody = document.getElementById('usersTableBody');
+
+
+// ==================== Signup ====================
+
+form.addEventListener('submit', async function(event) {
+
+  event.preventDefault();
+
+  if (!form.reportValidity()) return;
+
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+
+  const email = document.getElementById('email').value.trim().toLowerCase();
+
+  const password = document.getElementById('password').value;
+
+  const phone = document.getElementById('phone').value.trim();
+
+  const user_type = document.getElementById('user_type').value;
+
+
+  // ==================== Name Validation ====================
+
+  const namePattern = /^[\p{L}]+$/u;
+
+  if (!firstName || !lastName) {
+    message.style.color = 'red';
+    message.textContent = 'من فضلك أدخل الاسم الأول والاسم الثاني.';
+    return;
+  }
+
+  if (!namePattern.test(firstName) || !namePattern.test(lastName)) {
+    message.style.color = 'red';
+    message.textContent = 'الاسم يجب أن يحتوي على حروف فقط بدون أرقام أو رموز.';
+    return;
+  }
+
+  if (firstName.length > 15 || lastName.length > 15) {
+    message.style.color = 'red';
+    message.textContent = 'كل خانة اسم يجب ألا تزيد عن 15 حرفًا.';
+    return;
+  }
+
+
+  // ==================== Email Validation ====================
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(email)) {
+    message.style.color = 'red';
+    message.textContent = 'من فضلك أدخل بريدًا إلكترونيًا صحيحًا.';
+    return;
+  }
+
+
+  // ==================== Password Validation ====================
+
+  const passwordPattern = /^(?=.*[A-Za-z])(?=.*[0-9]).{8,}$/;
+
+  if (!passwordPattern.test(password)) {
+    message.style.color = 'red';
+    message.textContent =
+      'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل وحرف ورقم.';
+    return;
+  }
+
+
+  // ==================== Phone Validation ====================
+
+  const phonePattern = /^01[0125][0-9]{8}$/;
+
+  if (!phonePattern.test(phone)) {
+    message.style.color = 'red';
+    message.textContent =
+      'رقم الهاتف يجب أن يكون رقم موبايل مصري صحيح مكون من 11 رقمًا.';
+    return;
+  }
+
+
+  // ==================== User Type Validation ====================
+
+  if (!user_type) {
+    message.style.color = 'red';
+    message.textContent = 'من فضلك اختر نوع المستخدم.';
+    return;
+  }
+
+
+  // ==================== Prepare User Data ====================
+
+  const userData = {
+    name: firstName + ' ' + lastName,
+    email: email,
+    password: password,
+    phone: phone,
+    user_type: user_type
+  };
+
+
+  submitButton.disabled = true;
+  submitButton.textContent = 'جارٍ الحفظ...';
+
+  message.textContent = '';
+
+
+  // ==================== Send Data To Backend ====================
+
+  try {
+
+    const response = await fetch('/user', {
+      method: 'POST',
+
+      headers: {
+        'Content-Type': 'application/json'
+      },
+
+      body: JSON.stringify(userData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'فشل إنشاء الحساب');
+    }
+
+    message.style.color = 'green';
+
+    message.textContent =
+      'تم إنشاء الحساب بنجاح. جارٍ الانتقال لتسجيل الدخول...';
+
+    form.reset();
+
+    await loadUsers();
+
+    setTimeout(() => {
+      window.location.href = '/login.html';
+    }, 1500);
+
+
+  } catch (error) {
+
+    message.style.color = 'red';
+    message.textContent = error.message;
+
+  } finally {
+
+    submitButton.disabled = false;
+    submitButton.textContent = 'حفظ البيانات';
+
+  }
+
+});
+
+
+// ==================== Load Users ====================
+
+async function loadUsers() {
+
+  try {
+
+    const response = await fetch('/user');
+
+    if (!response.ok) {
+      throw new Error('فشل تحميل البيانات');
+    }
+
+    const users = await response.json();
+
+    usersTableBody.replaceChildren();
+
+
+    if (!users.length) {
+
+      const row = document.createElement('tr');
+
+      const cell = document.createElement('td');
+
+      cell.colSpan = 5;
+
+      cell.textContent = 'لا توجد بيانات مسجلة';
+
+      row.appendChild(cell);
+
+      usersTableBody.appendChild(row);
+
+      return;
+
+    }
+
+
+    users.forEach(user => {
+
+      const row = document.createElement('tr');
+
+      [
+        user.user_id,
+        user.NAME,
+        user.email,
+        user.phone,
+        user.user_type
+
+      ].forEach(value => {
+
+        const cell = document.createElement('td');
+
+        cell.textContent = value ?? '';
+
+        row.appendChild(cell);
+
+      });
+
+      usersTableBody.appendChild(row);
+
+    });
+
+
+  } catch (error) {
+
+    usersTableBody.textContent = 'تعذر تحميل البيانات';
+
+  }
+
+}
+
+
+// Load users when page opens
+loadUsers();
+
+</script>
+
+</body>
+</html>
